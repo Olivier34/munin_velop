@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+# If the server needs authentication add file /etc/munin/plugin-conf.d/velop:
+#
+# [velop_fqdnhostname_*]
+# env.velop_password yourveloppasswword
+
+import string, sys, os, requests, re, time
+
+#print sys.argv[0]
+
+hostname = os.path.split(sys.argv[0])[1].split('_')[1];
+velop_host = os.path.split(sys.argv[0])[1].split('_')[2];
+interface = os.path.split(sys.argv[0])[1].split('_')[3];
+
+# Show Config
+if len(sys.argv) > 1 and sys.argv[1] == 'config':
+    print "host_name "+hostname
+    print "graph_order down up"
+    print "graph_title "+interface+" traffic"
+    print "graph_args --base 1000"
+    print "graph_vlabel bits in (-) / out (+) per second"
+    print "graph_category velop_network_"+velop_host
+    print "down.label received"
+    print "down.type DERIVE"
+    print "down.graph no"
+    print "down.cdef down,8,*"
+    print "down.min 0"
+    print "up.label bps"
+    print "up.type DERIVE"
+    print "up.negative down"
+    print "up.cdef up,8,*"
+    print "up.min 0"
+    sys.exit(0)
+
+filename = "/tmp/velop_"+velop_host
+
+if os.path.isfile(filename):
+    fileage = time.time() -  os.path.getmtime(filename)
+else:
+    fileage = 1000
+
+if (fileage < 200):
+    f = open(filename)
+    content = f.read()
+else:
+    url='http://'+velop_host+'/sysinfo.cgi'
+    cur = requests.get(url, auth=('admin', os.getenv('velop_password')))
+    content = cur.text
+    open(filename, "wb").write(content)
+
+selected = content.split("ifconfig:")[1]
+resolv = selected.split("resolv.conf")
+ifconfig = resolv[0]
+
+iftext = ifconfig.split(interface)[1]
+rxtx = iftext.split("RX bytes:")[1]
+rx = rxtx.split()[0]
+txtext = rxtx.split("TX bytes:")[1]
+tx = txtext.split()[0]
+
+print "down.value "+rx
+print "up.value "+tx
