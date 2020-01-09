@@ -32,6 +32,7 @@ showdevices = selected.split("show_devices:")
 subselect = showdevices[0]
 
 nodes = {}
+ips = {}
 
 for line in subselect.splitlines():
     result = re.search(r'up    WLAN', line)
@@ -48,6 +49,7 @@ for line in showdevices[1].splitlines():
         n = line.split()
         master_name = n[len(n)-3]
         nodes[master_name] = nodes['master']
+        ips[master_name] = n[2]
         del nodes['master']
     else:
         slave = re.search(r'slave', line)
@@ -58,6 +60,7 @@ for line in showdevices[1].splitlines():
             for key in nodes.keys():
                 if key in slave_uuid:
                     nodes[slave_name] = nodes[key]
+                    ips[slave_name] = n[2]
                     del nodes[key]
 
 # Show Config
@@ -68,7 +71,7 @@ if len(sys.argv) > 1 and sys.argv[1] == 'config':
         print 'graph_vlabel Number of hosts'
         print 'graph_category velop'
         for key,value in nodes.items():
-
+            print key+'.info '+ips[key]
             print key+'.label '+key
             print key+'.draw AREASTACK'
         sys.exit(0)
