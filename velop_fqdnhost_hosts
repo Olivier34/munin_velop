@@ -19,13 +19,13 @@ else:
 
 if (fileage < 200):
     #print "cache ok!"
-    f = open("/tmp/velop_"+velop_host)
+    f = open(filename)
     content = f.read()
 else:
     url='http://'+velop_host+'/sysinfo.cgi'
     cur = requests.get(url, auth=('admin', os.getenv('velop_password')))
     content = cur.text
-    open("/tmp/velop_"+velop_host, "wb").write(content)
+    open(filename, "wb").write(content)
 
 selected = content.split("bh_report")[1]
 showdevices = selected.split("show_devices:")
