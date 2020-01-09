@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+# Add file /etc/munin/plugin-conf.d/velop:
+#
+# [velop_fqdnhostname_*]
+# env.velop_password yourveloppasswword
+# env.velop_master_host yourvelopmasterip
+
+
+import string, sys, os, requests, re, time
+
+velop_host = os.getenv('velop_master_host')
+
+filename = "/tmp/velop_"+velop_host
+
+if os.path.isfile(filename):
+    fileage = time.time() -  os.path.getmtime(filename)
+else:
+    fileage = 1000
+
+if (fileage < 200):
+    #print "cache ok!"
+    f = open("/tmp/velop_"+velop_host)
+    content = f.read()
+else:
+    url='http://'+velop_host+'/sysinfo.cgi'
+    cur = requests.get(url, auth=('admin', os.getenv('velop_password')))
+    content = cur.text
+    open("/tmp/velop_"+velop_host, "wb").write(content)
+
+selected = content.split("bh_report")[1]
+showdevices = selected.split("show_devices:")
+subselect = showdevices[0]
+
+nodes = {}
+
+for line in subselect.splitlines():
+    result = re.search(r'up    WLAN', line)
+    if result:
+        node = line.split()[3]
+        if node in nodes:
+            nodes[node] = nodes[node] + 1
+        else:
+            nodes[node] = 1
+
+for line in showdevices[1].splitlines():
+    master = re.search(r'master', line)
+    if master:
+        n = line.split()
+        master_name = line.split()[len(n)-3]
+        nodes[master_name] = nodes['master']
+        del nodes['master']
+    else:
+        slave = re.search(r'slave', line)
+        if slave:
+            n = line.split()
+            slave_name = line.split()[len(n)-3]
+            slave_uuid = line.split()[0]
+            for key in nodes.keys():
+                if key in slave_uuid:
+                    nodes[slave_name] = nodes[key]
+                    del nodes[key]
+
+# Show Config
+if len(sys.argv) > 1 and sys.argv[1] == 'config':
+        print "host_name ",list(os.path.split(sys.argv[0]))[1].split('_')[1],"\n";
+        print 'graph_title Velop hosts'
+        print 'graph_args -l 0'
+        print 'graph_vlabel Number of hosts'
+        print 'graph_category velop'
+        for key,value in nodes.items():
+
+            print key+'.label '+key
+            print key+'.draw AREASTACK'
+        sys.exit(0)
+
+for key,value in nodes.items():
+    print key+".value", value
