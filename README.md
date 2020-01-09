@@ -7,9 +7,9 @@
     use_node_name no
 
 ### In /etc/munin/plugin-conf.d/velop.mydomain.com :
-[velop_velop.mydomain.com_*]
-env.velop_password myveloppassword
-env.velop_master_host 192.168.1.241
+> [velop_velop.mydomain.com_*]
+> env.velop_password myveloppassword
+> env.velop_master_host 192.168.1.241
 
 ### In /etc/munin/plugins :
 velop_velop.rosello.eu_192.168.1.241_wifi0 -> /usr/share/munin/plugins/velop_fqdnhost_nodeip_interface
