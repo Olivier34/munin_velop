@@ -2,11 +2,11 @@
 
 ## Conf examples :
 ### In /etc/munin/munin.conf :
-...
+```
 [velop.mydomain.com]
     address 127.0.0.1
     use_node_name no
-...
+```
 
 ### In /etc/munin/plugin-conf.d/velop.mydomain.com :
  [velop_velop.mydomain.com_*]
